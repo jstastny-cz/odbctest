@@ -110,7 +110,7 @@ class ODBCHelper:
 
     def decide_column_type(self, table,col_name):
         # catalog.schema.table
-        table_parts = table.split(".")
+	table_parts = table.split(".")
         table_parts.reverse()
         table_qualified = [None,None,None]
         for i in range(0,len(table_parts)):
@@ -133,7 +133,7 @@ class ODBCHelper:
         return column_type
 
     def get_type_of_column(self,alias,col_name,query):
-        type=None
+	type=None
         table_array = []
         if(re.match("SELECT.*"+((alias+"\.") if alias else "")+col_name+".*FROM.*",query,re.IGNORECASE)):
             tables = self.get_queried_tables(query)
@@ -228,7 +228,15 @@ class ODBCHelper:
                 defined_tables.append((table_alias,child,inner_select))
         top_level_from_idxs = filter(lambda x:x+2 not in inner_selects_idxs, from_idxs) # indexes of top-level 'FROM' query tokens
         # return tokens which follows 'FROM' clauses denoted by top_level_from_idxs 
-        return defined_tables + map(lambda y: self.parse_relation_alias(str(y)),filter(lambda x: (stmt.tokens.index(x)-2) in top_level_from_idxs ,stmt.tokens))
+	with_possible_commas = filter(lambda x: (stmt.tokens.index(x)-2) in top_level_from_idxs ,stmt.tokens)
+	without_commas = []
+	for entry in with_possible_commas:
+		if not "," in str(entry):
+			without_commas.append(str(entry))
+		else:
+			without_commas+=str(entry).split(",")
+		
+	return defined_tables + map(lambda y: self.parse_relation_alias(str(y)),without_commas)
 
     def parse_relation_alias(self, query):
         # parse the 'as' part of query
