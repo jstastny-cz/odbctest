@@ -31,11 +31,12 @@ class QueryTester(object):
 	def generate_results(self,filename=None):
 		reader = QueryReader()
 		for filename in self.query_files(filename):	
-			result_dirname = self.results_dir+"/"+filename.split(".")[0]
+			query_set_name = filename.split(".")[0]
+			result_dirname = self.results_dir+"/"+query_set_name
 			if not exists(result_dirname):
 				makedirs(result_dirname)
 			for query_tuple in reader.read(self.query_dir+"/"+filename):
-				ResultsWriter(self.runner.run(*query_tuple)).export(result_dirname+"/"+query_tuple[0]+".xml")
+				ResultsWriter(self.runner.run(*query_tuple)).export(result_dirname+"/"+query_set_name+"_"+query_tuple[0]+".xml")
 
 	def compare_results(self,filename_given=None):
 		reader = QueryReader()
@@ -45,7 +46,7 @@ class QueryTester(object):
 			query_set_name = filename.split(".")[0]
 			for query_tuple in reader.read(self.query_dir+"/"+filename):
 				num_queries +=1
-				expected_loader = ResultsLoader(self.expected_dir+"/"+filename.split(".")[0]+"/"+query_tuple[0]+".xml")
+				expected_loader = ResultsLoader(self.expected_dir+"/"+query_set_name+"/"+query_set_name+"_"+query_tuple[0]+".xml")
 				expected_results = expected_loader.load() 
 				actual_results = self.runner.run(*query_tuple)
 				comp_result = ResultsComparator().compare(expected_results,actual_results)

@@ -18,14 +18,15 @@ class ResultsLoader(object):
 		self.filename = filename
 		self.xml = etree.parse(filename).getroot()
 		self.query_name = self.xml.find("queryResults").get("name")
-		self.query = self.xml.find("query").text
+		el_query = self.xml.find("query")
+		self.query = el_query.text if not el_query is None else None
 		self.is_except = self.xml.find("queryResults/exception")
 		if self.is_except is not None:
 			self.parse_exception()
 		else:
 			self.columns = self.parse_columns()
 			self.rows = self.parse_rows()
-		self.is_ordered = "order by" in self.query.lower()
+		self.is_ordered = "order by" in self.query.lower() if not self.query is None else None
 	
 
 	def parse_columns(self):
@@ -43,7 +44,11 @@ class ResultsLoader(object):
 		for el_row in el_rows_container.findall("tableRow"):
 			row = []
 			for el_cell in el_row.findall("tableCell"):
-				row.append(el_cell.getchildren()[0].text)
+				
+				if len(el_cell.getchildren())==0:
+					row.append("null")
+				else: 
+					row.append(el_cell.getchildren()[0].text)
 			rows.append(row)
 		return rows
 

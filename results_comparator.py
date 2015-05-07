@@ -10,7 +10,7 @@ class ResultsComparator(object):
 		self.failures = []
 	
 	def compare(self, expected_results, actual_results):
-		if (expected_results.query != actual_results.query):
+		if (not expected_results.query is None and expected_results.query != actual_results.query):
 			self.failures.append(ComparationFailure("Query mismatch for "+expected_results.query_name,expected_results.query,actual_results.query, expected_results.query_name,None))
 			return ComparationResult(False,self.failures)
 		if expected_results.is_exception and not actual_results.is_exception:
@@ -26,18 +26,21 @@ class ResultsComparator(object):
 		return ComparationResult(result,self.failures)
 
 	def compare_columns(self, ex_res, ac_res):
+		failures = []
 		if len(ex_res.columns) != len(ac_res.columns):
-			return False
+			failures.append("Compare error: Unexpected number of columns returned.",len(ex_res.columns),len(ac_res.columns),ac_res.query_name,ac_res.query)
 		for col1, col2 in [(ex_res.columns[i],ac_res.columns[i]) for i in range(0,len(ex_res.columns))]:
 			if col1.name!=col2.name:
-				return False
-			if col1.col_type!=col2.col_type:
-				return False
-		return True
+				failures.append(ComparationFailure("Compare error: column names differ.",col1.name,col2.name,ac_res.query_name, ac_res.query))
+			if col1.col_type!=col2.col_type:				
+				failures.append(ComparationFailure("Compare error: column types differ.",col1.col_type,col2.col_type,ac_res.query_name, ac_res.query))
+		self.failures+=failures
+		return len(failures)==0
 
 	def compare_rows(self, ex_res, ac_res):
+		failures = []
 		if len(ex_res.rows)!=len(ac_res.rows):
-			return False
+			failures.append("Compare error: Unexpected number of rows returned.",len(ex_res.rows),len(ac_res.rows),ac_res.query_name,ac_res.query)
 		all_sorted = ex_res.is_sorted and ac_res.is_sorted
 
 		sort_order = tuple([x for x in range(0,len(ex_res.rows[0])if len(ex_res.rows)>0 else 1)])
@@ -49,7 +52,6 @@ class ResultsComparator(object):
 			ex_rows = ex_res.rows
 			ac_rows = ac_res.rows
 		
-		failures = []
 		
 		for row1, row2 in [(ex_rows[i],ac_rows[i]) for i in range(0,len(ex_rows))]:
 			if len(row1)!=len(row2):
@@ -57,7 +59,7 @@ class ResultsComparator(object):
 			for ex_cell,ac_cell in [(row1[i],row2[i])for i in range(0, len(row1))]:
 				if(str(ex_cell)!=str(ac_cell)):
 					failures.append(ComparationFailure("Compare error: value mismatch in column "+str((self.index_id(row2,ac_cell)+1))+ " and row "+ str(self.index_id(ac_res.rows,row2)+1),str(ex_cell),str(ac_cell),ac_res.query_name, ac_res.query))
-		self.failures = failures
+		self.failures += failures
 		return len(failures)==0
 
 	def index_id(self,a_list, elem):

@@ -19,5 +19,5 @@ class ResultsContainer(object):
                 self.exception_type = exception_type
                 self.exception_message = exception_message
                 self.exception_class = exception_class
-		self.is_sorted = "order by" in query.lower()
+		self.is_sorted = "order by" in query.lower() if not query is None else None
 

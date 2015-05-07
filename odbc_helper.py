@@ -52,7 +52,7 @@ class ODBCHelper:
     def execute_query(self, query):
         self.cursor.execute(query)
         self.rows = self.cursor.fetchall()
-        return map(lambda x:[str(x[cell]) for cell in range(0,len(x))],[row for row in self.rows]);
+        return map(lambda x:[str(x[cell] if not x[cell] is None else "null") for cell in range(0,len(x))],[row for row in self.rows]);
 
     def parse_columns_from_query(self,query):
        
@@ -118,7 +118,7 @@ class ODBCHelper:
         table_qualified_tuple = tuple(table_qualified)
         result_table_tuple = None
         for table_tuple in self.db_tables:
-            result = table_qualified_tuple[0].lower()==table_tuple[0].lower()
+	    result = table_qualified_tuple[0].lower()==table_tuple[0].lower()
             if table_qualified_tuple[1]!=None:
                 result = result and (table_qualified_tuple[1].lower()==table_tuple[1].lower())
             if table_qualified_tuple[2]!=None:
