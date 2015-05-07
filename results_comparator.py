@@ -55,7 +55,7 @@ class ResultsComparator(object):
 		
 		for row1, row2 in [(ex_rows[i],ac_rows[i]) for i in range(0,len(ex_rows))]:
 			if len(row1)!=len(row2):
-				return False
+				failures.append(ComparationFailure("Compare error: number of cells in row differ.",len(row1),len(row2),ac_res.query_name,ac_res.query))
 			for ex_cell,ac_cell in [(row1[i],row2[i])for i in range(0, len(row1))]:
 				if(str(ex_cell)!=str(ac_cell)):
 					failures.append(ComparationFailure("Compare error: value mismatch in column "+str((self.index_id(row2,ac_cell)+1))+ " and row "+ str(self.index_id(ac_res.rows,row2)+1),str(ex_cell),str(ac_cell),ac_res.query_name, ac_res.query))
@@ -67,13 +67,14 @@ class ResultsComparator(object):
 		return (index for index, item in enumerate(a_list) if item is elem).next()
 
 	def compare_exceptions(self, ex_res,ac_res):
-		if not (ex_res.is_exception and ac_res.is_exception):
-			return True
-		if ex_res.exception_type != ac_res.exception_type:
-			return False
-		if ex_res.exception_message != ac_res.exception_message:
-			return False
-		if ex_res.exception_class != ac_res.exception_class:
-			return False
-		return True
+		failures=[]
+		if (ex_res.is_exception and ac_res.is_exception):
+			if ex_res.exception_type != ac_res.exception_type:
+				failures.append(ComparationFailure("Compare error: exception type mismatch",str(ex_res.exception_type),str(ac_res.exception_type),ac_res.query_name,ac_res.query))
+			if ex_res.exception_message != ac_res.exception_message:
+				failures.append(ComparationFailure("Compare error: exception message mismatch",str(ex_res.exception_message),str(ac_res.exception_message),ac_res.query_name,ac_res.query))
+			if ex_res.exception_class != ac_res.exception_class:
+				failures.append(ComparationFailure("Compare error: exception class mismatch",str(ex_res.exception_class),str(ac_res.exception_class),ac_res.query_name,ac_res.query))
+		self.failures+=failures
+		return len(failures)==0
 		

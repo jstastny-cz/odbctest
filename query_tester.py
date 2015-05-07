@@ -71,4 +71,4 @@ class QueryTester(object):
 		error_dirname = self.results_dir+"/errors-for-COMPARE/"+query_set_name + "/"
 		#makedirs(error_dirname) if not exists(error_dirname)
 		exists(error_dirname) or makedirs(error_dirname) 
-		etree.ElementTree(el_root).write(error_dirname+actual_results.query_name+".err", pretty_print=True,xml_declaration=True,encoding='UTF-8')	
+		etree.ElementTree(el_root).write(error_dirname+query_set_name+"/"+actual_results.query_name+".err", pretty_print=True,xml_declaration=True,encoding='UTF-8')	
