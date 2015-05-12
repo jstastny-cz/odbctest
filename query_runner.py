@@ -25,7 +25,7 @@ class QueryRunner(object):
 # file with query output.
 
     def run(self,query_name, query):
-        print "performing query: "+query_name
+#        print "performing query: "+query_name
 	rows = []
 	columns = []
 	exc_class = None
@@ -36,7 +36,7 @@ class QueryRunner(object):
             rows = self.helper.execute_query(query)
 	    columns = self.helper.parse_columns_from_query(query)
             self.helper.disconnect()
-            print "done query: "+query_name
+#            print "done query: "+query_name
 	except pyodbc.Error as e:
 	    try:
 		print e
@@ -44,7 +44,7 @@ class QueryRunner(object):
 		exc_message_with_sql_state = e.args[1].split(exc_class)[0].replace("\n","")
 		exc_message = re.split("\[.*\]\s*ERROR:\s*(.*)",exc_message_with_sql_state)[1]
 		exc_type = exc_class.split(".")[-1]
-		print "exception during query: "+query_name
+#		print "exception during query: "+query_name
     	    except Exception as e:
 	    	print "Error occured during connecting to database. Check the server is up."
 	return ResultsContainer(query_name,query,columns,rows,exc_type,exc_message,exc_class)

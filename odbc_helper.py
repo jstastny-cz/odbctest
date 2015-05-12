@@ -63,7 +63,7 @@ class ODBCHelper:
         stmt = parsed[0]
         cast_type = False
         for token in stmt.tokens:
-            num_of_cols = len(columns)
+	    num_of_cols = len(columns)
             if token.ttype==sqlparse.tokens.Keyword and str(token).lower()=="from":
                 break
             if token.ttype==None and cast_type:
@@ -71,7 +71,7 @@ class ODBCHelper:
                 cast_type=False
             elif token.ttype==None:
                 for col in map(lambda x:x.strip(),str(token).split(",")):
-                    parts = col.split(".")
+		    parts = col.split(".")
                     alias = parts[0].strip() if re.search("FROM\s+.*\s+AS\s+\w*",query,re.IGNORECASE) and len(parts)==2 else None
                     col_name = parts[-1].split(".")[-1].strip()
                     columns.append(Column(columns_retreived[num_of_cols],col,self.get_type_of_column(alias,col_name,query)))
@@ -126,16 +126,16 @@ class ODBCHelper:
             if result:
                 result_table_tuple=table_tuple
                 break
-        if not table.lower() in self.db_columns:
-            self.db_columns[table.lower()]=[x for x in self.cursor.columns(table=result_table_tuple[0],schema=result_table_tuple[1],catalog=result_table_tuple[2])]
-	column_type_list = map(lambda x:x.type_name.lower(),filter(lambda y:y.column_name.lower()==col_name.lower(),self.db_columns[table.lower()]))
+        if not table.lower().strip() in self.db_columns:
+            self.db_columns[table.lower().strip()]=[x for x in self.cursor.columns(table=result_table_tuple[0],schema=result_table_tuple[1],catalog=result_table_tuple[2])]
+	column_type_list = map(lambda x:x.type_name.lower(),filter(lambda y:y.column_name.lower()==col_name.lower(),self.db_columns[table.lower().strip()]))
 	column_type = column_type_list[0] if len(column_type_list)>0 else "undefined"
         return column_type
 
     def get_type_of_column(self,alias,col_name,query):
-	type=None
+	type="undefined"
         table_array = []
-        if(re.match("SELECT.*"+((alias+"\.") if alias else "")+col_name+".*FROM.*",query,re.IGNORECASE)):
+        if(re.match("SELECT.*"+((re.escape(alias)+"\.") if alias else "")+re.escape(col_name)+".*FROM.*",query,re.IGNORECASE)):
             tables = self.get_queried_tables(query)
             table_array = self.search_queried_tables(alias, col_name,query, tables)
 	if len(table_array)==1:

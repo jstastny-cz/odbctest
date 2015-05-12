@@ -40,9 +40,9 @@ class QueryTester(object):
 
 	def compare_results(self,filename_given=None):
 		reader = QueryReader()
-		num_queries = 0
-		num_errors = 0
 		for filename in self.query_files(filename_given):
+			num_queries = 0
+			num_errors = 0
 			query_set_name = filename.split(".")[0]
 			for query_tuple in reader.read(self.query_dir+"/"+filename):
 				num_queries +=1
@@ -53,7 +53,7 @@ class QueryTester(object):
 				if not comp_result.success:
 					num_errors +=1
 					self.report_failures(query_set_name,expected_results, actual_results,comp_result.failures)
-		print "succeeded:"+str(num_queries-num_errors)+", failed: "+str(num_errors)+", overall: "+str(num_queries)
+			print query_set_name +": succeeded "+str(num_queries-num_errors)+", failed "+str(num_errors)+", total "+str(num_queries)
 
 	def report_failures(self, query_set_name,expected_results, actual_results,failures):
 		exp_writer = ResultsWriter(expected_results)

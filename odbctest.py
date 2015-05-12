@@ -5,7 +5,7 @@ from query_tester import QueryTester
 from query_runner import DatabaseConnection
 COMPARE_MODE = "COMPARE"
 GENERATE_MODE = "GENERATE"
-
+sys.settrace
 class Configuration(object):
 	def set_mode(self,mode_string):
 		self.mode = mode_string

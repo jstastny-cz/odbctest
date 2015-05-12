@@ -10,19 +10,22 @@ class ResultsComparator(object):
 		self.failures = []
 	
 	def compare(self, expected_results, actual_results):
+		result = True
 		if (not expected_results.query is None and expected_results.query != actual_results.query):
 			self.failures.append(ComparationFailure("Query mismatch for "+expected_results.query_name,expected_results.query,actual_results.query, expected_results.query_name,None))
-			return ComparationResult(False,self.failures)
+			result = False
 		if expected_results.is_exception and not actual_results.is_exception:
 			self.failures.append(ComparationFailure("Comparation error: exception expected but didn't occur.",expected_results.exception_type,None,expected_results.query_name,expected_results.query))
-			return ComparationResult(False,self.failures)
+			result = False
 		if not expected_results.is_exception and actual_results.is_exception:
 			self.failures.append(ComparationFailure("Comparation error: unexpected exception occured.",None,actual_results.exception_type,expected_results.query_name,expected_results.query))
-			return ComparationResult(False,self.failures)
-		result = True
-		result = result and self.compare_columns(expected_results, actual_results)
-		result = result and self.compare_rows(expected_results, actual_results)
-		result = result and self.compare_exceptions(expected_results, actual_results)
+			result = False
+		result_columns = self.compare_columns(expected_results, actual_results)
+		result = result and result_columns 
+		result_rows =  self.compare_rows(expected_results, actual_results)
+		result = result and result_rows 
+		result_exceptions = self.compare_exceptions(expected_results, actual_results)
+		result = result and result_exceptions
 		return ComparationResult(result,self.failures)
 
 	def compare_columns(self, ex_res, ac_res):
