@@ -70,7 +70,8 @@ class ODBCHelper:
                 columns.append(Column(columns_retreived[num_of_cols],"CAST("+str(token)+")",self.decide_type_cast(query,num_of_cols)))
                 cast_type=False
             elif token.ttype==None:
-		select_cols = re.findall("\s*(\w+\((\w+,\s*)*\w+\),?|\w+,?)+\s*",str(token))
+		# maps to columns='table.column', functions('string','string',column,...) and AS following them; applies in any order
+		select_cols = re.findall("\s*([\w\.]+\((([\w\.]+|'.+'),\s*)*([\w\.]+|'.+')+\)\s*(AS\s+\w+)*,?|([\w\.]+\s*(AS\s+\w+)*))+\s*",str(token),re.IGNORECASE)
                 for col in map(lambda x:x[0].strip(),select_cols):
 		    if col.endswith(","):
 			col = col[:-1]
@@ -140,8 +141,8 @@ class ODBCHelper:
         as_in_colname = re.match("(.*)\s+AS.*",col_name,re.IGNORECASE)
 	if as_in_colname:
 	    col_name=as_in_colname.group(1)
-	table_array = []
-        if(re.match("SELECT.*"+((re.escape(alias)+"\.") if alias else "")+re.escape(col_name)+".*FROM.*",query,re.IGNORECASE)):
+        table_array=[]
+	if(re.match("SELECT.*"+((re.escape(alias)+"\.") if alias else "")+re.escape(col_name)+".*FROM.*",query,re.IGNORECASE)):
             tables = self.get_queried_tables(query)
 	    table_array = self.search_queried_tables(alias, col_name,query, tables)
 	if len(table_array)==1:
@@ -173,7 +174,7 @@ class ODBCHelper:
                 else:
                     inner_parsed = re.split(".*\((.*)\).*",table[2],re.IGNORECASE)
                     inner_query = inner_parsed if len(inner_parsed)<3 else inner_parsed[1:len(inner_parsed)-1][0]
-                    inner_split = re.split("\s*(\w*)\."+col_name,inner_query,re.IGNORECASE)
+		    inner_split = re.split("\s*(\w*)\."+col_name,inner_query,re.IGNORECASE)
                     inner_alias = None if len(inner_split)<3 else inner_split[1]
                     found += self.search_queried_tables(inner_alias,col_name,inner_query,table[1])   
                 break;
@@ -224,10 +225,9 @@ class ODBCHelper:
         tokenList = sqlparse.sql.TokenList(stmt.tokens)
         from_idxs = []
         inner_selects_idxs = []
-		
         # loop through all parsed tokens
         for token in stmt.tokens:
-            if(token.ttype ==sqlparse.tokens.Keyword and str(token).lower() in ["from","inner join","full outer join","right outer join","left outer join"]):
+            if(token.ttype ==sqlparse.tokens.Keyword and str(token).lower() in ["from","inner join","full outer join","right outer join","left outer join","union all"]):
                 from_idxs.append(stmt.tokens.index(token))
             if(token.ttype==None and ( str(token).lower().startswith("select") or str(token).lower().startswith("(select"))):
                 inner_select = str(token)
