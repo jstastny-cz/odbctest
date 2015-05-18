@@ -46,13 +46,19 @@ class QueryTester(object):
 			query_set_name = filename.split(".")[0]
 			for query_tuple in reader.read(self.query_dir+"/"+filename):
 				num_queries +=1
-				expected_loader = ResultsLoader(self.expected_dir+"/"+query_set_name+"/"+query_set_name+"_"+query_tuple[0]+".xml")
-				expected_results = expected_loader.load() 
-				actual_results = self.runner.run(*query_tuple)
-				comp_result = ResultsComparator().compare(expected_results,actual_results)
-				if not comp_result.success:
-					num_errors +=1
-					self.report_failures(query_set_name,expected_results, actual_results,comp_result.failures)
+				try:	
+					expected_filename = self.expected_dir+"/"+query_set_name+"/"+query_set_name+"_"+query_tuple[0]+".xml"
+					expected_loader = ResultsLoader(expected_filename)
+					expected_results = expected_loader.load() 
+					actual_results = self.runner.run(*query_tuple)
+					comp_result = ResultsComparator().compare(expected_results,actual_results)
+					if not comp_result.success:
+						num_errors +=1
+						self.report_failures(query_set_name,expected_results, actual_results,comp_result.failures)
+				except(IOError,etree.XMLSyntaxError) as e:
+					num_errors+=1
+					print "ERROR: Couldn't load expected results file "+expected_filename , e
+		
 			print query_set_name +": succeeded "+str(num_queries-num_errors)+", failed "+str(num_errors)+", total "+str(num_queries)
 
 	def report_failures(self, query_set_name,expected_results, actual_results,failures):
@@ -69,6 +75,5 @@ class QueryTester(object):
 		for el in  act_writer.xml.find("queryResults").getchildren():
 			el_actual_query_results.append(el)
 		error_dirname = self.results_dir+"/errors-for-COMPARE/"+query_set_name + "/"
-		#makedirs(error_dirname) if not exists(error_dirname)
-		exists(error_dirname) or makedirs(error_dirname) 
-		etree.ElementTree(el_root).write(error_dirname+query_set_name+"/"+actual_results.query_name+".err", pretty_print=True,xml_declaration=True,encoding='UTF-8')	
+		exists(error_dirname) or makedirs(error_dirname)
+		etree.ElementTree(el_root).write(error_dirname+actual_results.query_name+".err", pretty_print=True,xml_declaration=True,encoding='UTF-8')	

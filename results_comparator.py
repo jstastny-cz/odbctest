@@ -31,37 +31,39 @@ class ResultsComparator(object):
 	def compare_columns(self, ex_res, ac_res):
 		failures = []
 		if len(ex_res.columns) != len(ac_res.columns):
-			failures.append("Compare error: Unexpected number of columns returned.",len(ex_res.columns),len(ac_res.columns),ac_res.query_name,ac_res.query)
-		for col1, col2 in [(ex_res.columns[i],ac_res.columns[i]) for i in range(0,len(ex_res.columns))]:
-			if col1.name!=col2.name:
-				failures.append(ComparationFailure("Compare error: column names differ.",col1.name,col2.name,ac_res.query_name, ac_res.query))
-			if col1.col_type!=col2.col_type:				
-				failures.append(ComparationFailure("Compare error: column types differ.",col1.col_type,col2.col_type,ac_res.query_name, ac_res.query))
+			failures.append(ComparationFailure("Compare error: Unexpected number of columns returned.",len(ex_res.columns),len(ac_res.columns),ac_res.query_name,ac_res.query))
+		else:
+			for col1, col2 in [(ex_res.columns[i],ac_res.columns[i]) for i in range(0,len(ex_res.columns))]:
+				if col1.name.lower()!=col2.name.lower():
+					failures.append(ComparationFailure("Compare error: column names differ.",col1.name,col2.name,ac_res.query_name, ac_res.query))
+				if col1.col_type!=col2.col_type:				
+					failures.append(ComparationFailure("Compare error: column types differ.",col1.col_type,col2.col_type,ac_res.query_name, ac_res.query))
 		self.failures+=failures
 		return len(failures)==0
 
 	def compare_rows(self, ex_res, ac_res):
 		failures = []
 		if len(ex_res.rows)!=len(ac_res.rows):
-			failures.append("Compare error: Unexpected number of rows returned.",len(ex_res.rows),len(ac_res.rows),ac_res.query_name,ac_res.query)
-		all_sorted = ex_res.is_sorted and ac_res.is_sorted
-
-		sort_order = tuple([x for x in range(0,len(ex_res.rows[0])if len(ex_res.rows)>0 else 1)])
-		
-		if not all_sorted:
-			ex_rows=sorted(ex_res.rows,key = itemgetter(*sort_order))
-			ac_rows=sorted(ac_res.rows, key=itemgetter(*sort_order))
+			failures.append(ComparationFailure("Compare error: Unexpected number of rows returned.",len(ex_res.rows),len(ac_res.rows),ac_res.query_name,ac_res.query))
 		else:
-			ex_rows = ex_res.rows
-			ac_rows = ac_res.rows
-		
-		
-		for row1, row2 in [(ex_rows[i],ac_rows[i]) for i in range(0,len(ex_rows))]:
-			if len(row1)!=len(row2):
-				failures.append(ComparationFailure("Compare error: number of cells in row differ.",len(row1),len(row2),ac_res.query_name,ac_res.query))
-			for ex_cell,ac_cell in [(row1[i],row2[i])for i in range(0, len(row1))]:
-				if(str(ex_cell)!=str(ac_cell)):
-					failures.append(ComparationFailure("Compare error: value mismatch in column "+str((self.index_id(row2,ac_cell)+1))+ " and row "+ str(self.index_id(ac_res.rows,row2)+1),str(ex_cell),str(ac_cell),ac_res.query_name, ac_res.query))
+			all_sorted = ex_res.is_sorted and ac_res.is_sorted
+
+			sort_order = tuple([x for x in range(0,len(ex_res.rows[0])if len(ex_res.rows)>0 else 1)])
+			
+			if not all_sorted and len(sort_order)>0:
+				ex_rows=sorted(ex_res.rows,key = itemgetter(*sort_order))
+				ac_rows=sorted(ac_res.rows, key=itemgetter(*sort_order))
+			else:
+				ex_rows = ex_res.rows
+				ac_rows = ac_res.rows
+			
+			
+			for row1, row2 in [(ex_rows[i],ac_rows[i]) for i in range(0,len(ex_rows))]:
+				if len(row1)!=len(row2):
+					failures.append(ComparationFailure("Compare error: number of cells in row differ.",len(row1),len(row2),ac_res.query_name,ac_res.query))
+				for ex_cell,ac_cell in [(row1[i],row2[i])for i in range(0, len(row1))]:
+					if(str(ex_cell)!=str(ac_cell)):
+						failures.append(ComparationFailure("Compare error: value mismatch in column "+str((self.index_id(row2,ac_cell)+1))+ " and row "+ str(self.index_id(ac_res.rows,row2)+1),str(ex_cell),str(ac_cell),ac_res.query_name, ac_res.query))
 		self.failures += failures
 		return len(failures)==0
 

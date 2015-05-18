@@ -25,7 +25,7 @@ class QueryRunner(object):
 # file with query output.
 
     def run(self,query_name, query):
-#        print "performing query: "+query_name
+        print "performing query: "+query_name
 	rows = []
 	columns = []
 	exc_class = None
