@@ -1,6 +1,8 @@
 import sys
 import getopt
 import getpass
+reload(sys)
+sys.setdefaultencoding('utf-8')
 from query_tester import QueryTester
 from query_runner import DatabaseConnection
 COMPARE_MODE = "COMPARE"

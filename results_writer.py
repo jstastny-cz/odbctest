@@ -56,7 +56,8 @@ class ResultsWriter:
 			for j in range(0,self.num_cols):
 				el_cell = etree.SubElement(el_row,"tableCell");
 				el_text = etree.SubElement(el_cell,str(self.result_cols[j].col_type))
-				el_text.text=str(self.raw_results[i][j])
+				text_string = self.raw_results[i][j]
+				el_text.text=unicode(text_string)
 		
 	def write_exception(self):
 		el_exc = etree.SubElement(self.xml.find("queryResults"), "exception")
@@ -68,6 +69,6 @@ class ResultsWriter:
 		el_exc_class.text = str(self.exception_class)
 
 	def export(self,filename):
-		etree.ElementTree(self.xml).write(filename, pretty_print=True,xml_declaration=True,encoding='UTF-8')	
+		etree.ElementTree(self.xml).write(filename, pretty_print=True,xml_declaration=True,encoding='utf-8')	
 			
 			

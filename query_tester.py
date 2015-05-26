@@ -4,7 +4,7 @@ from results_writer import ResultsWriter
 from results_loader import ResultsLoader
 from results_comparator import ResultsComparator,ComparationResult
 from os import listdir, makedirs
-from os.path import isfile, join, exists
+from os.path import isfile, isdir, join, exists
 from lxml import etree
 class QueryTester(object):
 	db_connection = None 
@@ -22,7 +22,7 @@ class QueryTester(object):
 
 	def query_files(self, filename=None):
 		query_files = []
-		if filename: 
+		if filename and isfile(join(self.query_dir,filename)): 
 			query_files.append(filename)
 		else:
 			query_files += [ f for f in listdir(self.query_dir) if isfile(join(self.query_dir,f)) ]
@@ -67,7 +67,7 @@ class QueryTester(object):
 		el_root = etree.Element('root')
 		el_query_results = etree.SubElement(el_root,"queryResults",{"name":actual_results.query_name,"value":actual_results.query})
 		for failure in failures:
-			etree.SubElement(el_query_results,"failureMessage").text = failure.message+" (Expected:"+str(failure.expected) +"; Actual:"+str(failure.actual)+";)"
+			etree.SubElement(el_query_results,"failureMessage").text = failure.message+" (Expected:"+unicode(failure.expected) +"; Actual:"+unicode(failure.actual)+";)"
 		el_actual_query_results = etree.SubElement(el_query_results,"actualQueryResults")
 		el_expected_query_results = etree.SubElement(el_query_results,"expectedQueryResults")
 		for el in exp_writer.xml.find("queryResults").getchildren():

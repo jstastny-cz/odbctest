@@ -62,7 +62,7 @@ class ResultsComparator(object):
 				if len(row1)!=len(row2):
 					failures.append(ComparationFailure("Compare error: number of cells in row differ.",len(row1),len(row2),ac_res.query_name,ac_res.query))
 				for ex_cell,ac_cell in [(row1[i],row2[i])for i in range(0, len(row1))]:
-					if(str(ex_cell)!=str(ac_cell)):
+					if((isinstance(ex_cell,str) and isinstance(ac_cell,str) and str(ex_cell)!=str(ac_cell))or(isinstance(ex_cell,unicode)and isinstance(ac_cell,unicode)and ex_cell.encode('utf-8')!=ac_cell.encode('utf-8'))):
 						failures.append(ComparationFailure("Compare error: value mismatch in column "+str((self.index_id(row2,ac_cell)+1))+ " and row "+ str(self.index_id(ac_res.rows,row2)+1),str(ex_cell),str(ac_cell),ac_res.query_name, ac_res.query))
 		self.failures += failures
 		return len(failures)==0
