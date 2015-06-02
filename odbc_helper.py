@@ -116,14 +116,21 @@ class ODBCHelper:
 
     def decide_column_type(self, table,col_name):
 	# catalog.schema.table
-	table_parts = table.split(".")
-        table_parts.reverse()
-        table_qualified = [None,None,None]
-        for i in range(0,len(table_parts)):
-            table_qualified[i]=table_parts[i]
+	parsed_table = re.match("\s*((((\w+)\.)*(\w+)\.)*(\"([\w\.]+)\"|\w+))\s*",table)
+
+        table_qualified = [parsed_table.group(7) or parsed_table.group(6),parsed_table.group(5),parsed_table.group(4)]
         table_qualified_tuple = tuple(table_qualified)
-        result_table_tuple = None
-        for table_tuple in self.db_tables:
+        result_table_tuple = self.get_table_tuple(table_qualified_tuple)
+        
+	if not table.lower().strip() in self.db_columns:
+		self.db_columns[table.lower().strip()]=[x for x in self.cursor.columns(table=result_table_tuple[0],schema=result_table_tuple[1],catalog=result_table_tuple[2])]
+	column_type_list = map(lambda x:x.type_name.lower(),filter(lambda y:y.column_name.lower()==col_name.lower(),self.db_columns[table.lower().strip()]))
+	column_type = column_type_list[0] if len(column_type_list)>0 else "undefined"
+        return column_type
+
+    def get_table_tuple(self,table_qualified_tuple):
+	result_table_tuple = None
+	for table_tuple in self.db_tables:
 	    result = table_qualified_tuple[0].lower()==table_tuple[0].lower()
             if table_qualified_tuple[1]!=None:
                 result = result and (table_qualified_tuple[1].lower()==table_tuple[1].lower())
@@ -132,11 +139,9 @@ class ODBCHelper:
             if result:
                 result_table_tuple=table_tuple
                 break
-        if not table.lower().strip() in self.db_columns:
-		self.db_columns[table.lower().strip()]=[x for x in self.cursor.columns(table=result_table_tuple[0],schema=result_table_tuple[1],catalog=result_table_tuple[2])]
-	column_type_list = map(lambda x:x.type_name.lower(),filter(lambda y:y.column_name.lower()==col_name.lower(),self.db_columns[table.lower().strip()]))
-	column_type = column_type_list[0] if len(column_type_list)>0 else "undefined"
-        return column_type
+	return result_table_tuple
+	
+
 
     def get_type_of_column(self,alias,col_name,query):
 	type="undefined"
