@@ -55,7 +55,7 @@ class ODBCHelper:
         return map(lambda x:[data.encode('utf-8') if isinstance(data,unicode) else str(data) for data in [(x[cell] if not x[cell] is None else "null") for cell in range(0,len(x))]],[row for row in self.rows]);
 
     def parse_columns_from_query(self,query):
-       
+	print query
 	columns_retreived = [col[0] for col in self.cursor.description]
 	columns = []
         parsed = sqlparse.parse(query)
@@ -72,11 +72,17 @@ class ODBCHelper:
 		for col in self.cursor.description:
 		    columns.append(Column(col[0],None,self.get_type_of_column(None,col[0],query)))
             elif token.ttype==None:
+		aritm_ops = "[\*\/\-\+]"
+		match_aritmetic_ops = "\(\w+\s*"+aritm_ops+"\s*[^,]*\)\s*(AS\s+\w+)*,?"
+		match_fq_column_name = "[\w\.]+"
+		match_function = "[\w\.]+\((([\w\s\.]+|'.+'),\s*)*([\w\s\.]+|'.+')+\)"
 		# maps to columns='table.column', functions('string','string',column,...) and AS following them; applies in any order
-		select_cols = re.findall("\s*([\w\.]+\((([\w\.]+|'.+'),\s*)*([\w\.]+|'.+')+\)\s*(AS\s+\w+)*,?|([\w\.]+\s*(AS\s+\w+)*))+\s*",str(token),re.IGNORECASE)
+		select_cols = re.findall("("+match_function+"\s*(AS\s+\w+)*,?|("+match_fq_column_name+"\s*(AS\s+\w+)*,?)|("+match_aritmetic_ops+"))",str(token),re.IGNORECASE)
                 for col in map(lambda x:x[0].strip(),select_cols):
 		    if col.endswith(","):
 			col = col[:-1]
+		    col=col.strip()
+		    print col
 		    parts = col.split(".")
                     alias = parts[0].strip() if re.search("FROM\s+.*\s+AS\s+\w*",query,re.IGNORECASE) and len(parts)==2 else None
                     col_name = parts[-1].split(".")[-1].strip()
