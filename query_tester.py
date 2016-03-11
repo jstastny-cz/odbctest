@@ -12,13 +12,15 @@ class QueryTester(object):
 	query_dir = None
 	results_dir = None
 	expected_dir = None
+	scenario_name = None
 
-	def __init__(self, db_connection, query_dir, results_dir, expected_dir):
+	def __init__(self, db_connection, query_dir, results_dir, scenario_name, expected_dir):
 		self.db_connection = db_connection
 		self.runner = QueryRunner(self.db_connection)	
 		self.query_dir = query_dir
 		self.results_dir = results_dir
 		self.expected_dir = expected_dir
+		self.scenario_name = scenario_name
 
 	def query_files(self, filename=None):
 		query_files = []
@@ -32,7 +34,7 @@ class QueryTester(object):
 		reader = QueryReader()
 		for filename in self.query_files(filename):	
 			query_set_name = filename.split(".")[0]
-			result_dirname = self.results_dir+"/"+query_set_name
+			result_dirname = self.results_dir+"/"+self.scenario_name+"/"+query_set_name
 			if not exists(result_dirname):
 				makedirs(result_dirname)
 			for query_tuple in reader.read(self.query_dir+"/"+filename):
@@ -40,6 +42,12 @@ class QueryTester(object):
 
 	def compare_results(self,filename_given=None):
 		reader = QueryReader()
+		scenario_name=self.scenario_name
+		sc_num_queries=0
+		sc_num_errors=0
+		sc_num_skipped=0
+		if not exists(self.results_dir):
+			makedirs(self.results_dir)
 		for filename in self.query_files(filename_given):
 			num_queries = 0
 			num_errors = 0
@@ -54,26 +62,30 @@ class QueryTester(object):
 					comp_result = ResultsComparator().compare(expected_results,actual_results)
 					if not comp_result.success:
 						num_errors +=1
-						self.report_failures(query_set_name,expected_results, actual_results,comp_result.failures)
+						self.report_failures(query_set_name,expected_results, actual_results,comp_result)
 				except(IOError,etree.XMLSyntaxError) as e:
 					num_errors+=1
 					print "ERROR: Couldn't load expected results file "+expected_filename , e
-		
-			print query_set_name +": succeeded "+str(num_queries-num_errors)+", failed "+str(num_errors)+", total "+str(num_queries)
+			sc_num_queries+=num_queries
+			sc_num_errors+=num_errors
+		filepath_summary_totals = self.results_dir+"/Summary_totals.txt"
+		if not exists(filepath_summary_totals):
+			f_totals = open(filepath_summary_totals,"w")
+			self.write_summary_totals_header(f_totals)
+			f_totals.close()
+		f_totals = open(filepath_summary_totals,"a")
+		f_totals.write(scenario_name + "\t" + str(sc_num_queries-sc_num_errors)+"\t"+str(sc_num_errors)+"\t"+str(sc_num_queries)+"\t"+str(sc_num_skipped)+"\n")
+		f_totals.close()
 
-	def report_failures(self, query_set_name,expected_results, actual_results,failures):
-		exp_writer = ResultsWriter(expected_results)
-		act_writer = ResultsWriter(actual_results)
-		el_root = etree.Element('root')
-		el_query_results = etree.SubElement(el_root,"queryResults",{"name":actual_results.query_name,"value":actual_results.query})
-		for failure in failures:
-			etree.SubElement(el_query_results,"failureMessage").text = failure.message+" (Expected:"+unicode(failure.expected) +"; Actual:"+unicode(failure.actual)+";)"
-		el_actual_query_results = etree.SubElement(el_query_results,"actualQueryResults")
-		el_expected_query_results = etree.SubElement(el_query_results,"expectedQueryResults")
-		for el in exp_writer.xml.find("queryResults").getchildren():
-			el_expected_query_results.append(el)
-		for el in  act_writer.xml.find("queryResults").getchildren():
-			el_actual_query_results.append(el)
-		error_dirname = self.results_dir+"/errors-for-COMPARE/"+query_set_name + "/"
-		exists(error_dirname) or makedirs(error_dirname)
-		etree.ElementTree(el_root).write(error_dirname+actual_results.query_name+".err", pretty_print=True,xml_declaration=True,encoding='UTF-8')	
+	def report_failures(self, query_set_name,expected_results, actual_results,comparation_results):
+		writer = ResultsWriter(actual_results,expected_results,comparation_results)
+		error_dirname = self.results_dir+"/"+self.scenario_name+"/errors_for_COMPARE/"
+		if not exists(error_dirname):
+			makedirs(error_dirname)
+		writer.export(error_dirname+"/"+query_set_name+"_"+actual_results.query_name+".err")
+
+	def write_summary_totals_header(self, f):
+		f.write("==================\n");
+		f.write("TestResult Summary\n");
+		f.write("==================\n");
+		f.write("Scenario\tPass\tFail\tTotal\tSkipped\n\n");

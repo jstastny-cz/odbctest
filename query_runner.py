@@ -35,8 +35,7 @@ class QueryRunner(object):
             self.helper.connect()
             rows = self.helper.execute_query(query)
 	    columns = self.helper.parse_columns_from_query(query)
-            self.helper.disconnect()
-#            print "done query: "+query_name
+	    self.helper.disconnect()
 	except pyodbc.Error as e:
 	    try:
 		print e
@@ -46,5 +45,7 @@ class QueryRunner(object):
 		exc_type = exc_class.split(".")[-1]
 #		print "exception during query: "+query_name
     	    except Exception as e:
+		if exc_message is None:
+			exc_message="Unexpected exception occured."
 	    	print "Error occured during connecting to database. Check the server is up."
 	return ResultsContainer(query_name,query,columns,rows,exc_type,exc_message,exc_class)
