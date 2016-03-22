@@ -50,12 +50,20 @@ class ODBCHelper:
 	self.clear_cache()
  
     def execute_query(self, query):
+	self.rows=None
+	self.tables=None
+	self.db_columns={}
         self.cursor.execute(query)
-        self.rows = self.cursor.fetchall()
+	if self.cursor.rowcount>=0:
+		self.rows = self.cursor.fetchall()
+	else:
+		self.rows = []
         return map(lambda x:[data.encode('utf-8') if isinstance(data,unicode) else str(data) for data in [(x[cell] if not x[cell] is None else "null") for cell in range(0,len(x))]],[row for row in self.rows]);
 
     def parse_columns_from_query(self,query):
 	print query
+ 	if self.cursor.description is None:
+		 return []
 	columns_retreived = [col[0] for col in self.cursor.description]
 	columns = []
         parsed = sqlparse.parse(query)

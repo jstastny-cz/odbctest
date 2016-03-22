@@ -24,17 +24,17 @@ class ResultsWriter:
 		self.result_cols = results.columns
 		self.num_rows = len(self.raw_results)
 		self.num_cols = len(self.result_cols)
-		self.exp_raw_results = exp_results.rows
-		self.exp_result_cols = exp_results.columns
-		self.exp_num_rows = len(self.exp_raw_results)
-		self.exp_num_cols = len(self.exp_result_cols)
+		self.exp_raw_results = exp_results.rows if exp_results is not None else None
+		self.exp_result_cols = exp_results.columns if exp_results is not None else None
+		self.exp_num_rows = len(self.exp_raw_results) if exp_results is not None else None 
+		self.exp_num_cols = len(self.exp_result_cols) if exp_results is not None else None 
 		self.query_name = results.query_name
 		self.exception_type = results.exception_type
 		self.exception_message = results.exception_message
 		self.exception_class = results.exception_class
-		self.exp_exception_type = exp_results.exception_type
-		self.exp_exception_message = exp_results.exception_message
-		self.exp_exception_class = exp_results.exception_class
+		self.exp_exception_type = exp_results.exception_type if exp_results is not None else None
+		self.exp_exception_message = exp_results.exception_message if exp_results is not None else None
+		self.exp_exception_class = exp_results.exception_class if exp_results is not None else None
 		if exp_results is None:
 			self.write_generated_results()
 		elif (comparation_results is not None) and (not comparation_results.success):
@@ -46,8 +46,9 @@ class ResultsWriter:
 		if self.exception_message:
 			self.write_exception("queryResults","exception",self.exception_type,self.exception_message,self.exception_class)
 		else:
-			self.write_cols("queryResults",self.result_cols)
-			self.write_results("queryResults",self.num_rows,self.num_cols,self.result_cols,self.raw_results)
+			el = self.xml.find("queryResults")
+			self.write_cols(el,self.result_cols)
+			self.write_results(el,self.num_rows,self.num_cols,self.result_cols,self.raw_results)
 
 	def write_comparation_results(self,comparation_results):
 		self.write_query_results_compare_mode()
@@ -56,7 +57,6 @@ class ResultsWriter:
 		if self.exception_message:
 			self.write_exception("queryResults","actualException",self.exception_type,self.exception_message,self.exception_class)
 		else:
-			print self.exception_message
 			act_el = etree.SubElement(self.xml.find("queryResults"),"actualQueryResults")
 			self.write_cols(act_el,self.result_cols)
 			self.write_results(act_el,self.num_rows,self.num_cols,self.result_cols,self.raw_results)
@@ -84,7 +84,7 @@ class ResultsWriter:
 			etree.SubElement(el_select,"dataElement",{"type":x.col_type}).text=x.name 
 
 	def write_results(self,parent_element,num_rows,num_cols,result_cols,raw_results):
-		print num_rows, num_cols,raw_results	
+		print num_rows, num_cols,result_cols,raw_results	
 		el_table = etree.SubElement(parent_element, "table", {"rowCount":str(num_rows),"columnCount":str(num_cols)})
 		for i in range(0,num_rows):
 			el_row = etree.SubElement(el_table,"tableRow")

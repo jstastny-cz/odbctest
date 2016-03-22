@@ -16,8 +16,10 @@ class QueryRunner(object):
 
     def __init__(self, db):
         self.helper = ODBCHelper(db.driver,db.server,db.port,db.database,db.user,db.password)
+	self.helper.connect()
 
     def destroy(self):
+	self.helper.disconnect()
         self.helper.destroy()
 
 # Method runs given query with specified name. Query is forwarded
@@ -32,10 +34,8 @@ class QueryRunner(object):
 	exc_type = None
 	exc_message = None
         try:
-            self.helper.connect()
             rows = self.helper.execute_query(query)
 	    columns = self.helper.parse_columns_from_query(query)
-	    self.helper.disconnect()
 	except pyodbc.Error as e:
 	    try:
 		print e
@@ -43,8 +43,9 @@ class QueryRunner(object):
 		exc_message_with_sql_state = e.args[1].split(exc_class)[0].replace("\n","")
 		exc_message = re.split("\[.*\]\s*ERROR:\s*(.*)",exc_message_with_sql_state)[1]
 		exc_type = exc_class.split(".")[-1]
-#		print "exception during query: "+query_name
+		print "exception during query: "+query_name
     	    except Exception as e:
+		print e
 		if exc_message is None:
 			exc_message="Unexpected exception occured."
 	    	print "Error occured during connecting to database. Check the server is up."
