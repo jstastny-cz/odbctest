@@ -30,76 +30,78 @@ class ODBCHelper:
 
     def connect(self):
         self.connection = pyodbc.connect('DRIVER={'+self.driver+'};SERVER='+self.server+';PORT='+self.port+';DATABASE='+self.database+';UID='+self.user+';PWD='+self.password)
-        self.cursor = self.connection.cursor()
-        self.db_tables = deepcopy([(x[2],x[1],x[0]) for x in self.cursor.tables()])
 
     def disconnect(self):
         self.clean()
         self.connection.close()
 
     def clean(self):
-        self.cursor.close()
+        if(self.cursor is not None):
+                self.cursor.close()
         self.rows = None
         self.tables = None
+        self.db_columns = {}
         self.db_tables = None
-        
+        self.cursor = self.connection.cursor()
+        self.db_tables = deepcopy([(x[2],x[1],x[0]) for x in self.cursor.tables()])
+
     def clear_cache(self):
-	self.db_columns = {}   
+        self.db_columns = {}
 
     def destroy(self):
-	self.clear_cache()
- 
+        self.clear_cache()
+
     def execute_query(self, query):
-	self.rows=None
-	self.tables=None
-	self.db_columns={}
+        self.clean()
+        stmt = sqlparse.parse(query)[0]
         self.cursor.execute(query)
-	if self.cursor.rowcount>=0:
-		self.rows = self.cursor.fetchall()
-	else:
-		self.rows = []
-        return map(lambda x:[data.encode('utf-8') if isinstance(data,unicode) else str(data) for data in [(x[cell] if not x[cell] is None else "null") for cell in range(0,len(x))]],[row for row in self.rows]);
+        if stmt.get_type()=="SELECT" and self.cursor.rowcount>0:
+                self.rows = self.cursor.fetchall()
+        else:
+                if stmt.get_type() in ["DELETE"]:
+                        self.cursor.commit()
+                self.rows = []
+        result = map(lambda x:[data.encode('utf-8') if isinstance(data,unicode) else str(data) for data in [(x[cell] if not x[cell] is None else "null") for cell in range(0,len(x))]],[row for row in self.rows]);
+        return result 
 
     def parse_columns_from_query(self,query):
-	print query
- 	if self.cursor.description is None:
-		 return []
-	columns_retreived = [col[0] for col in self.cursor.description]
-	columns = []
+        if self.cursor.description is None:
+            return []
+        columns_retreived = [col[0] for col in self.cursor.description]
+        columns = []
         parsed = sqlparse.parse(query)
         stmt = parsed[0]
         cast_type = False
         for token in stmt.tokens:
-	    num_of_cols = len(columns)
+            num_of_cols = len(columns)
             if token.ttype==sqlparse.tokens.Keyword and str(token).lower()=="from":
                 break
             if token.ttype==None and cast_type:
                 columns.append(Column(columns_retreived[num_of_cols],"CAST("+str(token)+")",self.decide_type_cast(query,num_of_cols)))
                 cast_type=False
-	    elif token.ttype==sqlparse.tokens.Wildcard and str(token)=="*":
-		for col in self.cursor.description:
-		    columns.append(Column(col[0],None,self.get_type_of_column(None,col[0],query)))
+            elif token.ttype==sqlparse.tokens.Wildcard and str(token)=="*":
+                for col in self.cursor.description:
+                    columns.append(Column(col[0],None,self.get_type_of_column(None,col[0],query)))
             elif token.ttype==None:
-		aritm_ops = "[\*\/\-\+]"
-		match_aritmetic_ops = "\(\w+\s*"+aritm_ops+"\s*[^,]*\)\s*(AS\s+\w+)*,?"
-		match_fq_column_name = "[\w\.]+"
-		match_function = "[\w\.]+\((([\w\s\.]+|'.+'),\s*)*([\w\s\.]+|'.+')+\)"
-		# maps to columns='table.column', functions('string','string',column,...) and AS following them; applies in any order
-		select_cols = re.findall("("+match_function+"\s*(AS\s+\w+)*,?|("+match_fq_column_name+"\s*(AS\s+\w+)*,?)|("+match_aritmetic_ops+"))",str(token),re.IGNORECASE)
+                aritm_ops = "[\*\/\-\+]"
+                match_aritmetic_ops = "\(\w+\s*"+aritm_ops+"\s*[^,]*\)\s*(AS\s+\w+)*,?"
+                match_fq_column_name = "[\w\.]+"
+                match_function = "[\w\.]+\((([\w\s\.]+|'.+'),\s*)*([\w\s\.]+|'.+')+\)"
+                # maps to columns='table.column', functions('string','string',column,...) and AS following them; applies in any order
+                select_cols = re.findall("("+match_function+"\s*(AS\s+\w+)*,?|("+match_fq_column_name+"\s*(AS\s+\w+)*,?)|("+match_aritmetic_ops+"))",str(token),re.IGNORECASE)
                 for col in map(lambda x:x[0].strip(),select_cols):
-		    if col.endswith(","):
-			col = col[:-1]
-		    col=col.strip()
-		    print col
-		    parts = col.split(".")
+                    if col.endswith(","):
+                        col = col[:-1]
+                    col=col.strip()
+                    parts = col.split(".")
                     alias = parts[0].strip() if re.search("FROM\s+.*\s+AS\s+\w*",query,re.IGNORECASE) and len(parts)==2 else None
                     col_name = parts[-1].split(".")[-1].strip()
-		    columns.append(Column(columns_retreived[num_of_cols],col,self.get_type_of_column(alias,col_name,query)))
+                    columns.append(Column(columns_retreived[num_of_cols],col,self.get_type_of_column(alias,col_name,query)))
                     num_of_cols = len(columns)
             elif token.ttype==sqlparse.tokens.Keyword and str(token).lower()=="cast":
                 cast_type=True
-	return columns
-    
+        return columns
+
     def decide_type_cast(self, query, column_offset):
         castedType = "undefined"
         parsed = sqlparse.parse(query)
@@ -112,7 +114,7 @@ class ODBCHelper:
                 lowest_idx = token 
             if(token.ttype == sqlparse.tokens.Keyword and str(token).lower()=="from"):
                 highest_idx =  token
-        
+
         selectColumnsList = tokenList.tokens_between(lowest_idx,highest_idx)
         col_count = 0
         for tok in selectColumnsList:
@@ -130,22 +132,22 @@ class ODBCHelper:
 
     def decide_column_type(self, table,col_name):
 	# catalog.schema.table
-	parsed_table = re.match("\s*((((\w+)\.)*(\w+)\.)*(\"([\w\.]+)\"|\w+))\s*",table)
+        parsed_table = re.match("\s*((((\w+)\.)*(\w+)\.)*(\"([\w\.]+)\"|\w+))\s*",table)
 
         table_qualified = [parsed_table.group(7) or parsed_table.group(6),parsed_table.group(5),parsed_table.group(4)]
         table_qualified_tuple = tuple(table_qualified)
         result_table_tuple = self.get_table_tuple(table_qualified_tuple)
-        
-	if not table.lower().strip() in self.db_columns:
-		self.db_columns[table.lower().strip()]=[x for x in self.cursor.columns(table=result_table_tuple[0],schema=result_table_tuple[1],catalog=result_table_tuple[2])]
-	column_type_list = map(lambda x:x.type_name.lower(),filter(lambda y:y.column_name.lower()==col_name.lower(),self.db_columns[table.lower().strip()]))
-	column_type = column_type_list[0] if len(column_type_list)>0 else "undefined"
+
+        if not table.lower().strip() in self.db_columns:
+            self.db_columns[table.lower().strip()]=[x for x in self.cursor.columns(table=result_table_tuple[0],schema=result_table_tuple[1],catalog=result_table_tuple[2])]
+        column_type_list = map(lambda x:x.type_name.lower(),filter(lambda y:y.column_name.lower()==col_name.lower(),self.db_columns[table.lower().strip()]))
+        column_type = column_type_list[0] if len(column_type_list)>0 else "undefined"
         return column_type
 
     def get_table_tuple(self,table_qualified_tuple):
-	result_table_tuple = None
-	for table_tuple in self.db_tables:
-	    result = table_qualified_tuple[0].lower()==table_tuple[0].lower()
+        result_table_tuple = None
+        for table_tuple in self.db_tables:
+            result = table_qualified_tuple[0].lower()==table_tuple[0].lower()
             if table_qualified_tuple[1]!=None:
                 result = result and (table_qualified_tuple[1].lower()==table_tuple[1].lower())
             if table_qualified_tuple[2]!=None:
@@ -153,21 +155,21 @@ class ODBCHelper:
             if result:
                 result_table_tuple=table_tuple
                 break
-	return result_table_tuple
-	
+        return result_table_tuple
+
 
 
     def get_type_of_column(self,alias,col_name,query):
-	type="undefined"
-	as_in_colname = re.match("(.*)\s+AS.*",col_name,re.IGNORECASE)
-	if as_in_colname:
-	    col_name=as_in_colname.group(1)
+        type="undefined"
+        as_in_colname = re.match("(.*)\s+AS.*",col_name,re.IGNORECASE)
+        if as_in_colname:
+            col_name=as_in_colname.group(1)
         table_array=[]
-	if(re.match("SELECT.*"+((re.escape(alias)+"\.") if alias else "")+re.escape(col_name)+".*FROM.*",query,re.IGNORECASE) or re.match("SELECT\s+\*\s+FROM.*",query,re.IGNORECASE)):
+        if(re.match("SELECT.*"+((re.escape(alias)+"\.") if alias else "")+re.escape(col_name)+".*FROM.*",query,re.IGNORECASE) or re.match("SELECT\s+\*\s+FROM.*",query,re.IGNORECASE)):
             tables = self.get_queried_tables(query)
-	    table_array = self.search_queried_tables(alias, col_name,query, tables)
-	if len(table_array)==1:
-	    type = self.decide_column_type(table_array[0],col_name)
+            table_array = self.search_queried_tables(alias, col_name,query, tables)
+        if len(table_array)==1:
+            type = self.decide_column_type(table_array[0],col_name)
         return type
 #
 #   Method get_query_with_alias retreives query which is denoted by given alias
@@ -195,24 +197,24 @@ class ODBCHelper:
                 else:
                     inner_parsed = re.split(".*\((.*)\).*",table[2],re.IGNORECASE)
                     inner_query = inner_parsed if len(inner_parsed)<3 else inner_parsed[1:len(inner_parsed)-1][0]
-		    inner_split = re.split("\s*(\w*)\."+col_name,inner_query,re.IGNORECASE)
+                    inner_split = re.split("\s*(\w*)\."+col_name,inner_query,re.IGNORECASE)
                     inner_alias = None if len(inner_split)<3 else inner_split[1]
                     found += self.search_queried_tables(inner_alias,col_name,inner_query,table[1])   
                 break;
             elif alias!=None and not isinstance(table[1],basestring):
-             found += self.search_queried_tables(alias,col_name,query,table[1])
+                found += self.search_queried_tables(alias,col_name,query,table[1])
             elif alias==None and not isinstance(table[1],basestring):
-             found += self.search_queried_tables(None,col_name,query,table[1])
+                found += self.search_queried_tables(None,col_name,query,table[1])
             elif alias==None:
                 found.append(table[1])
             if found !=None and len(found)>0:
                 return found
         return found;       
-    
+
     def get_queried_tables(self,query):
         if self.tables == None:
             self.tables = self.queried_tables(query)
-	return self.tables
+        return self.tables
 #
 #   Method queried_tables parses given query and creates structure of aliases and table names
 #   Format of structure is:
@@ -233,15 +235,15 @@ class ODBCHelper:
 #
     def queried_tables(self, query):
         defined_tables = []
-	in_brackets = re.search("^\((.*)\)$",query);
-	if in_brackets:
-		query = in_brackets.group(1)
+        in_brackets = re.search("^\((.*)\)$",query);
+        if in_brackets:
+            query = in_brackets.group(1)
         found = re.search("^\((.*)\).*AS\s+(\w+).*$",query,re.IGNORECASE)
-	if found:
-		defined_tables.append((found.group(2),self.queried_tables(found.group(1)),found.group(1)))
-		return defined_tables
-        	
-	parsed = sqlparse.parse(query)
+        if found:
+            defined_tables.append((found.group(2),self.queried_tables(found.group(1)),found.group(1)))
+            return defined_tables
+
+        parsed = sqlparse.parse(query)
         stmt = parsed[0]
         tokenList = sqlparse.sql.TokenList(stmt.tokens)
         from_idxs = []
@@ -249,7 +251,7 @@ class ODBCHelper:
         # loop through all parsed tokens
         for token in stmt.tokens:
             token_string = unicode(token)
-	    if(token.ttype ==sqlparse.tokens.Keyword and token_string.lower() in ["from","inner join","full outer join","right outer join","left outer join","union all"]):
+            if(token.ttype ==sqlparse.tokens.Keyword and token_string.lower() in ["from","inner join","full outer join","right outer join","left outer join","union all"]):
                 from_idxs.append(stmt.tokens.index(token))
             if(token.ttype==None and ( token_string.lower().startswith("select") or token_string.lower().startswith("(select"))):
                 inner_select = token_string
@@ -263,14 +265,14 @@ class ODBCHelper:
                 defined_tables.append((table_alias,child,inner_select))
         top_level_from_idxs = filter(lambda x:x+2 not in inner_selects_idxs, from_idxs) # indexes of top-level 'FROM' query tokens
         # return tokens which follows 'FROM' clauses denoted by top_level_from_idxs 
-	with_possible_commas = filter(lambda x: (stmt.tokens.index(x)-2) in top_level_from_idxs ,stmt.tokens)
-	without_commas = []
-	for entry in with_possible_commas:
-		if not "," in str(entry):
-			without_commas.append(str(entry))
-		else:
-			without_commas+=str(entry).split(",")
-	return defined_tables + map(lambda y: self.parse_relation_alias(str(y)),without_commas)
+        with_possible_commas = filter(lambda x: (stmt.tokens.index(x)-2) in top_level_from_idxs ,stmt.tokens)
+        without_commas = []
+        for entry in with_possible_commas:
+            if not "," in str(entry):
+                without_commas.append(str(entry))
+            else:
+                without_commas+=str(entry).split(",")
+        return defined_tables + map(lambda y: self.parse_relation_alias(str(y)),without_commas)
 
     def parse_relation_alias(self, query):
         # parse the 'as' part of query
