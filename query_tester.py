@@ -22,19 +22,20 @@ class QueryTester(object):
 		self.expected_dir = expected_dir
 		self.scenario_name = scenario_name
 
-	def query_files(self, filename=None):
-		query_files = []
-		if filename and isfile(join(self.query_dir,filename)): 
+	def query_files(self,filename=None,query_files=[]):
+		full_file_name = join(self.query_dir,filename) if filename else self.query_dir;
+		if isfile(full_file_name):
 			query_files.append(filename)
-		else:
-			query_files += [ f for f in listdir(self.query_dir) if isfile(join(self.query_dir,f)) ]
+		elif isdir(full_file_name):
+			for f in listdir(full_file_name):
+				self.query_files(join(filename,f) if filename else f,query_files)
 		return filter(lambda x:x.endswith(".xml"),query_files)
 
 	def generate_results(self,filename=None):
 		reader = QueryReader()
-		for filename in self.query_files(filename):	
-			query_set_name = filename.split(".")[0]
-			result_dirname = self.results_dir+"/"+self.scenario_name+"/"+query_set_name
+		for filename in self.query_files(filename):
+			query_set_name = filename.split(".")[0].split("/")[-1]
+			result_dirname = self.results_dir+"/"+ "/".join(filename.split(".")[0].split("/")[:-1])+"/"+query_set_name
 			if not exists(result_dirname):
 				makedirs(result_dirname)
 			for query_tuple in reader.read(self.query_dir+"/"+filename):
