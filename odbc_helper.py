@@ -132,8 +132,10 @@ class ODBCHelper:
 
     def decide_column_type(self, table,col_name):
 	# catalog.schema.table
+        print col_name, table
         parsed_table = re.match("\s*((((\w+)\.)*(\w+)\.)*(\"([\w\.]+)\"|\w+))\s*",table)
-
+        if(parsed_table is None):
+            return "undefined"
         table_qualified = [parsed_table.group(7) or parsed_table.group(6),parsed_table.group(5),parsed_table.group(4)]
         table_qualified_tuple = tuple(table_qualified)
         result_table_tuple = self.get_table_tuple(table_qualified_tuple)

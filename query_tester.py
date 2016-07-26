@@ -33,7 +33,7 @@ class QueryTester(object):
 
 	def generate_results(self,filename=None):
 		reader = QueryReader()
-		result = true
+		result = True
 		for filename in self.query_files(filename):
 			query_set_name = filename.split(".")[0].split("/")[-1]
 			result_dirname = self.results_dir+"/"+ "/".join(filename.split(".")[0].split("/")[:-1])+"/"+query_set_name
