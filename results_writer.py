@@ -84,7 +84,6 @@ class ResultsWriter:
 			etree.SubElement(el_select,"dataElement",{"type":x.col_type}).text=x.name 
 
 	def write_results(self,parent_element,num_rows,num_cols,result_cols,raw_results):
-		print num_rows, num_cols,result_cols,raw_results	
 		el_table = etree.SubElement(parent_element, "table", {"rowCount":str(num_rows),"columnCount":str(num_cols)})
 		for i in range(0,num_rows):
 			el_row = etree.SubElement(el_table,"tableRow")
