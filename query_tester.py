@@ -57,6 +57,7 @@ class QueryTester(object):
 			num_queries = 0
 			num_errors = 0
 			query_set_name = filename.split(".")[0]
+                        print "Scenario:",scenario_name,"Query Set:", query_set_name
 			for query_tuple in reader.read(self.query_dir+"/"+filename):
 				num_queries +=1
 				try:	
