@@ -33,13 +33,17 @@ class QueryTester(object):
 
 	def generate_results(self,filename=None):
 		reader = QueryReader()
+		result = true
 		for filename in self.query_files(filename):
 			query_set_name = filename.split(".")[0].split("/")[-1]
 			result_dirname = self.results_dir+"/"+ "/".join(filename.split(".")[0].split("/")[:-1])+"/"+query_set_name
 			if not exists(result_dirname):
 				makedirs(result_dirname)
 			for query_tuple in reader.read(self.query_dir+"/"+filename):
-				ResultsWriter(self.runner.run(*query_tuple)).export(result_dirname+"/"+query_set_name+"_"+query_tuple[0]+".xml")
+				results_container = self.runner.run(*query_tuple)
+				result = result and (results_container is not None)
+				ResultsWriter(results_container).export(result_dirname+"/"+query_set_name+"_"+query_tuple[0]+".xml")
+		return result
 
 	def compare_results(self,filename_given=None):
 		reader = QueryReader()
@@ -77,6 +81,7 @@ class QueryTester(object):
 		f_totals = open(filepath_summary_totals,"a")
 		f_totals.write(scenario_name + "\t" + str(sc_num_queries-sc_num_errors)+"\t"+str(sc_num_errors)+"\t"+str(sc_num_queries)+"\t"+str(sc_num_skipped)+"\n")
 		f_totals.close()
+		return sc_num_errors+sc_num_skipped
 
 	def report_failures(self, query_set_name,expected_results, actual_results,comparation_results):
 		writer = ResultsWriter(actual_results,expected_results,comparation_results)
