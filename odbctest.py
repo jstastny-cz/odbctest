@@ -106,10 +106,13 @@ def main(argv):
 
 	db_conn = DatabaseConnection(config.odbcdriver,config.server,config.port,config.database,config.username,config.password)
 	tester = QueryTester(db_conn,config.querydir,config.resultsdir,config.database,config.expecteddir if hasattr(config,"expecteddir") else None)
+        result=True
 	if config.mode==GENERATE_MODE:
-		return tester.generate_results(config.queryfile if hasattr(config,"queryfile")else None)
+		result=tester.generate_results(config.queryfile if hasattr(config,"queryfile")else None)
 	elif config.mode==COMPARE_MODE:
-		return tester.compare_results(config.queryfile if hasattr(config,"queryfile")else None)
+		result=tester.compare_results(config.queryfile if hasattr(config,"queryfile")else None)
+        if not result:
+            sys.exit(1)
 
 def help_and_exit(message):
 	print message

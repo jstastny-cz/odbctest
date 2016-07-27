@@ -84,7 +84,7 @@ class QueryTester(object):
 		f_totals = open(filepath_summary_totals,"a")
 		f_totals.write(scenario_name + "\t" + str(sc_num_queries-sc_num_errors)+"\t"+str(sc_num_errors)+"\t"+str(sc_num_queries)+"\t"+str(sc_num_skipped)+"\n")
 		f_totals.close()
-		return sc_num_errors+sc_num_skipped
+                return (sc_num_errors+sc_num_skipped)==0
 
 	def report_failures(self, query_set_name,expected_results, actual_results,comparation_results):
 		writer = ResultsWriter(actual_results,expected_results,comparation_results)
