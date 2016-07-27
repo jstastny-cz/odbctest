@@ -35,8 +35,9 @@ class QueryTester(object):
 		reader = QueryReader()
 		result = True
 		for filename in self.query_files(filename):
-			query_set_name = filename.split(".")[0].split("/")[-1]
-			result_dirname = self.results_dir+"/"+ "/".join(filename.split(".")[0].split("/")[:-1])+"/"+query_set_name
+			query_set_full_name = filename.split(".")[0]
+                        query_set_name = query_set_full_name.split("/")[-1]
+			result_dirname = self.results_dir+"/"+ "/"+self.scenario_name+"/"+query_set_full_name
 			if not exists(result_dirname):
 				makedirs(result_dirname)
 			for query_tuple in reader.read(self.query_dir+"/"+filename):
@@ -56,12 +57,13 @@ class QueryTester(object):
 		for filename in self.query_files(filename_given):
 			num_queries = 0
 			num_errors = 0
-			query_set_name = filename.split(".")[0]
-                        print "Scenario:",scenario_name,"Query Set:", query_set_name
+			query_set_full_name = filename.split(".")[0]
+                        query_set_name = query_set_full_name.split("/")[-1]
+                        print "Scenario:",scenario_name,"Query Set:", query_set_full_name
 			for query_tuple in reader.read(self.query_dir+"/"+filename):
 				num_queries +=1
 				try:	
-					expected_filename = self.expected_dir+"/"+query_set_name+"/"+query_set_name+"_"+query_tuple[0]+".xml"
+					expected_filename = self.expected_dir+"/"+query_set_full_name+"/"+query_set_name+"_"+query_tuple[0]+".xml"
 					expected_loader = ResultsLoader(expected_filename)
 					expected_results = expected_loader.load() 
 					actual_results = self.runner.run(*query_tuple)
