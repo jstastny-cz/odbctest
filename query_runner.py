@@ -35,7 +35,7 @@ class QueryRunner(object):
 	exc_message = None
         try:
             rows = self.helper.execute_query(query)
-	    columns = self.helper.parse_columns_from_query(query)
+            columns = self.helper.parse_columns_from_query(query)
 	except pyodbc.Error as e:
 	    try:
 		print e

@@ -55,7 +55,7 @@ class ODBCHelper:
         self.clean()
         stmt = sqlparse.parse(query)[0]
         self.cursor.execute(query)
-        if stmt.get_type()=="SELECT" and self.cursor.rowcount>0:
+        if stmt.get_type() not in ["INSERT","DELETE","UPDATE"] and self.cursor.rowcount>0:
                 self.rows = self.cursor.fetchall()
         else:
                 if stmt.get_type() in ["DELETE"]:
@@ -74,6 +74,10 @@ class ODBCHelper:
         cast_type = False
         for token in stmt.tokens:
             num_of_cols = len(columns)
+            if token.ttype==sqlparse.tokens.Keyword and str(token).lower()=="fetch":
+                for col in columns_retreived:
+                    columns.append(Column(col, None, "undefined"))
+                break
             if token.ttype==sqlparse.tokens.Keyword and str(token).lower()=="from":
                 break
             if token.ttype==None and cast_type:
