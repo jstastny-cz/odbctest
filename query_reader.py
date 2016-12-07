@@ -1,4 +1,4 @@
-from lxml import etree
+from xml.etree import ElementTree as etree
 
 class QueryReader(object):
     def read(self,filename):

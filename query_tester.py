@@ -5,7 +5,7 @@ from results_loader import ResultsLoader
 from results_comparator import ResultsComparator,ComparationResult
 from os import listdir, makedirs
 from os.path import isfile, isdir, join, exists
-from lxml import etree
+from xml.etree import ElementTree as etree
 class QueryTester(object):
 	db_connection = None 
 	runner = None
@@ -71,7 +71,7 @@ class QueryTester(object):
 					if not comp_result.success:
 						num_errors +=1
 						self.report_failures(query_set_name,expected_results, actual_results,comp_result)
-				except(IOError,etree.XMLSyntaxError) as e:
+				except(IOError) as e:
 					num_errors+=1
 					print "ERROR: Couldn't load expected results file "+expected_filename , e
 			sc_num_queries+=num_queries
