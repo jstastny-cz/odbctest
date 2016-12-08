@@ -103,6 +103,6 @@ class ResultsWriter:
 		el_exc_class.text = str(exception_class)
 
 	def export(self,filename):
-		etree.ElementTree(self.xml).write(filename, pretty_print=True,xml_declaration=True,encoding='utf-8')	
+		etree.ElementTree(self.xml).write(filename, xml_declaration=True,encoding='UTF-8')	
 			
 			
