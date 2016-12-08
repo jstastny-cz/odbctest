@@ -36,7 +36,7 @@ class QueryRunner(object):
         try:
             rows = self.helper.execute_query(query)
             columns = self.helper.parse_columns_from_query(query)
-	except pyodbc.Error as e:
+	except Exception as e:
 	    try:
 		print e
 		exc_class = re.findall(r"([.*\.]*.*Exception)",e.args[1])[0]
