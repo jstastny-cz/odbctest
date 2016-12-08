@@ -34,8 +34,8 @@ class QueryRunner(object):
 	exc_type = None
 	exc_message = None
         try:
-            rows = self.helper.execute_query(query)
-            columns = self.helper.parse_columns_from_query(query)
+            rows = self.helper.execute_query(query.encode('UTF-8'))
+            columns = self.helper.parse_columns_from_query(query.encode('UTF-8'))
 	except Exception as e:
 	    try:
 		print e
