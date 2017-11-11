@@ -37,10 +37,14 @@ class QueryRunner(object):
         exc_class = None
         exc_type = None
         exc_message = None
+        query_type = None
+        update_count = None
         try:
             rows = self.helper.execute_query(query.encode('UTF-8'))
             columns = self.helper.parse_columns_from_query(
                 query.encode('UTF-8'))
+            update_count = self.helper.get_update_count()
+            query_type = self.helper.get_query_type()
         except Exception as e:
             try:
                 print e
@@ -56,5 +60,6 @@ class QueryRunner(object):
                 if exc_message is None:
                     exc_message = "Unexpected exception occured."
                 print "Error occured during connecting to database. Check the server is up."
-        return ResultsContainer(query_name, query, columns, rows, exc_type,
-                                exc_message, exc_class)
+        return ResultsContainer(query_name, query, query_type, update_count,
+                                columns, rows, exc_type, exc_message, None,
+                                exc_class)

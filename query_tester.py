@@ -93,8 +93,8 @@ class QueryTester(object):
         f_totals = open(filepath_summary_totals, "a")
         f_totals.write(scenario_name + "\t" +
                        str(sc_num_queries - sc_num_errors) + "\t" +
-                       str(sc_num_errors) + "\t" + str(sc_num_queries) + "\t" +
-                       str(sc_num_skipped) + "\n")
+                       str(sc_num_errors) + "\t" + str(sc_num_skipped) + "\t" +
+                       str(sc_num_queries) + "\n")
         f_totals.close()
         return (sc_num_errors + sc_num_skipped) == 0
 
@@ -106,10 +106,10 @@ class QueryTester(object):
         if not exists(error_dirname):
             makedirs(error_dirname)
         writer.export(error_dirname + "/" + query_set_name + "_" +
-                      actual_results.query_name + ".err")
+                      actual_results.query_name + "_error.xml")
 
     def write_summary_totals_header(self, f):
         f.write("==================\n")
         f.write("TestResult Summary\n")
         f.write("==================\n")
-        f.write("Scenario\tPass\tFail\tTotal\tSkipped\n\n")
+        f.write("Scenario\tPass\tFail\tSkip\tTotal\n\n")
