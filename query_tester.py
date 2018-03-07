@@ -71,6 +71,7 @@ class QueryTester(object):
             print "Scenario:", scenario_name, "Query Set:", query_set_full_name
             for query_tuple in reader.read(self.query_dir + "/" + filename):
                 num_queries += 1
+                runner=None
                 try:
                     runner=QueryRunner(self.db_connection)
                     expected_filename = self.expected_dir + "/" + query_set_full_name + "/" + query_set_name + "_" + query_tuple[0] + ".xml"

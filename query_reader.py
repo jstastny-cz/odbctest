@@ -7,4 +7,5 @@ class QueryReader(object):
         queries = []
         for query in xml.iter("{http://xml.whipper.org/suite}query"):
             queries.append((query.get("name"), query.text))
+        xml.clear()
         return queries

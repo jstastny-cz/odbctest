@@ -181,5 +181,6 @@ class ResultsWriter:
             self.xml)).toprettyxml(indent="    ")
         with open(filename, "w") as f:
             f.write(xmlstr.encode('utf-8'))
+        self.xml.clear()
         #etree.ElementTree(self.xml).write(
         #    filename, xml_declaration=True, encoding='utf-8', method="xml")

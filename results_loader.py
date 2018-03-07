@@ -39,19 +39,23 @@ class ResultsLoader(object):
         self.query_name = self.xml.find(QUERY_RESULT).get("name")
         el_query = self.xml.find(QUERY)
         self.query = el_query.text if not el_query is None else None
+        el_query.clear()
         self.is_except = self.xml.find(QUERY_RESULT + "/" + EXCEPTION)
         if self.is_except is not None:
             self.parse_exception()
+            self.is_except.clear()
         else:
             el_update = self.xml.find(QUERY_RESULT + "/" + UPDATE)
             self.query_type = "update" if el_update is not None else "select"
             if self.query_type == "update":
                 self.update_count = el_update.get("update-count")
+                el_update.clear()
             elif self.query_type == "select":
                 self.columns = self.parse_columns()
                 self.rows = self.parse_rows()
         self.is_ordered = "order by" in self.query.lower(
         ) if not self.query is None else None
+        self.xml.clear()
 
     def parse_columns(self):
         if self.is_except is not None: return None
@@ -86,6 +90,7 @@ class ResultsLoader(object):
         self.exception_regex = re.compile(
             el_regex.text) if el_regex is not None else None
         self.exception_class = el_exception.find(EXCEPTION_CLASS).text
+        el_exception.clear()
 
     def load(self):
         return ResultsContainer(self.query_name, self.query, self.query_type,
